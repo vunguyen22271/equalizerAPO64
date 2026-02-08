@@ -1524,6 +1524,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="C:\Learn\equalizerAPO64\Editor\Editor.rc" />
+    <ResourceCompile Include=".\Editor\Editor.rc" />
   </ItemGroup>
 </Project>

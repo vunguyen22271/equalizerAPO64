@@ -257,5 +257,4 @@ Makefile*
 *.cbt
 *.h.cpp
 
-# Local scripts
-# patch_vcxproj.py
+*.bak
