@@ -43,6 +43,8 @@ VSTPluginFilterGUIDialog::VSTPluginFilterGUIDialog(QWidget* parent, VSTPluginIns
 
 	ui->frame->setFixedSize(width, height);
 	effect->setSizeWindowFunc(bind(&VSTPluginFilterGUIDialog::onSizeWindow, this, _1, _2));
+	
+	effect->doIdle();
 }
 
 VSTPluginFilterGUIDialog::~VSTPluginFilterGUIDialog()
