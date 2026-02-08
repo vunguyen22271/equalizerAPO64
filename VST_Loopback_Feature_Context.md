@@ -2,6 +2,8 @@
 
 This document describes the implementation of the VST Loopback Capture feature for Equalizer APO's Editor. It serves as a context reference for future development, bug fixing, and feature upgrades.
 
+![Feature](doc\images\image.png)
+
 ## 0. Prerequisites for Development
 
 Before attempting to build or modify this feature, ensure the following are installed and configured:
