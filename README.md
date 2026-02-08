@@ -1,44 +1,109 @@
-# EqualizerAPO (double precision edition)
+# VST Loopback Capture & Visualization Feature Context
 
-This repo contains a modified 1.4.2 port of [EqualizerAPO](https://sourceforge.net/p/equalizerapo/) - a system wide equalizer for Windows, enhanced with double precision (64 bit) audio processing, expanded AVX support and a fully automated build pipeline using Visual Studio 2022.
+This repo folk from @TheFireKahuna/equalizerAPO64
 
-This effort was inspired and founded on a previous conversion of EqualizerAPO to double precision processing (https://github.com/chebum/equalizer-apo-64), updated and later rebuilt here with the latest EAPO release, and further enhanced with expanded AVX usage for optimal performancee.
+This document describes the implementation of the VST Loopback Capture feature for Equalizer APO's Editor. It serves as a context reference for future development, bug fixing, and feature upgrades.
 
-Double procession processing (64 bit internal pipeline) in EqualizerAPO maintains precision and quality when applying multiple overlapping effects. Examples include convolution, complex parametric EQ setups or GraphicEQ's. Support for AVX256 also ensures similar performance to the original 32 bit pipeline, with additional optional support for AVX512 to further enhance performance. ARM is also supported via a native start-to-end build of all dependencies and Qt projects.
+![Feature](doc/images/image.png)
 
-## Features
-- **Double precision processing filter engine** (32bit floats -> 64bit doubles) for improved fidelity with more complex setups
-- Support for AVX2 & AVX-512 in both EAPO and all dependencies, including FFTW3's AVX2/AVX-512 optimizations.
-- Expanded usage of AVX instructions to reduce processing latency
-- Uses shared VC++ DLLs for improved compatibility
-- Compiled with VS 2022 for all components, using the latest Windows SDK and additional compiler optimizations.
-- Built with AOCL-FFTW 3.3.10 (optimized for AMD/modern CPUs)
-- Updated Qt 6.10 for GUI components with native ARM support.
-- Uses fp-precise instead of fp-fast for floating point math.
-- Automated build pipeline for all components and the installer via Github Actions
-- Fully native start-to-end ARM64 automated build.
+## 0. Prerequisites for Development
 
-## Installation
-Download the latest version from the [Releases page](https://github.com/TheFireKahuna/equalizerAPO64/releases).
+Before attempting to build or modify this feature, ensure the following are installed and configured:
 
-## Building EqualizerAPO
-This project uses a fully automated Github Actions CI pipeline for both the main project and all dependencies.
+### A. Development Tools
 
-The following forked repositories are used for a stable pipeline, each including a CI pipline and a packaged release using the latest Github Actions build:
-- [AOCL-FFTW 5.1 (FFTW 3.3.10)](https://github.com/thefirekahuna/amd-fftw)
-- [muparserx 4.0.12](https://github.com/thefirekahuna/muparserx)
-- [libsndfile 1.2.2](https://github.com/thefirekahuna/libsndfile)
-- [tclap 1.2.5](https://github.com/thefirekahuna/tclap)
+- **Visual Studio 2022:** Community Edition or higher.
+  - **Workload:** "Desktop development with C++"
+  - **Component:** MSVC v143 - VS 2022 C++ x64/x86 build tools (or v145 if using latest preview).
+  - **Windows SDK:** Windows 10 or 11 SDK.
 
-Local builds are configured via shared environment variables, directly configurable in the relevant .vcxproj and .pro files as follows:
-```
-  <PropertyGroup>
-    <LIBSNDFILE_INCLUDE Condition="'$(LIBSNDFILE_INCLUDE)'==''">F:\Git\libsndfile\include</LIBSNDFILE_INCLUDE>
-    <LIBSNDFILE_LIB Condition="'$(LIBSNDFILE_LIB)'==''">F:\Git\libsndfile\out\build\x64-Release</LIBSNDFILE_LIB>
-    <FFTW_INCLUDE Condition="'$(FFTW_INCLUDE)'==''">F:\Git\amd-fftw\build\include</FFTW_INCLUDE>
-    <FFTW_LIB Condition="'$(FFTW_LIB)'==''">F:\Git\amd-fftw\out\build\x64-Release</FFTW_LIB>
-    <MUPARSERX_INCLUDE Condition="'$(MUPARSERX_INCLUDE)'==''">F:\Git\muparserx\parser</MUPARSERX_INCLUDE>
-    <MUPARSERX_LIB Condition="'$(MUPARSERX_LIB)'==''">F:\Git\muparserx\lib64</MUPARSERX_LIB>
-    <TCLAP_ROOT Condition="'$(TCLAP_ROOT)'==''">F:\Git\tclap</TCLAP_ROOT>
-  </PropertyGroup>
-```
+### B. Frameworks & Libraries
+
+- **Qt 6:** Specifically **Qt 6.7.3** (MSVC 2022 64-bit).
+  - Install via the Qt Online Installer.
+  - Ensure the `Qt6` directories (`bin`, `include`, `lib`) are accessible or configured in your environment.
+  - **Required Modules:** `Qt Creator`, `Qt 6.7.3` -> `MSVC 2022 64-bit`, `Sources`.
+
+### C. External Libraries (Provided in Repository)
+
+The repository includes necessary pre-compiled static libraries in the `external-lib` directory. **DO NOT DELETE** this folder.
+
+- **FFTW 3:** Double precision version (`libfftw3-3.lib`).
+- **LibSndFile:** Audio file IO library.
+- **MuParserX:** Math parser library.
+
+## 1. Feature Overview
+
+The **VST Loopback Capture** feature allows VST plugins loaded within the Equalizer APO Editor to visualize audio in real-time. Since the Editor does not process live audio itself (it only generates config files), this feature uses **WASAPI Loopback** to capture the system's audio output and feed it into the VST plugin's processing loop solely for visualization purposes.
+
+## 2. Core Implementation Components
+
+### A. Audio Capture (`WASAPILoopback`)
+
+- **File:** `Editor/helpers/WASAPILoopback.cpp`, `Editor/helpers/WASAPILoopback.h`
+- **Purpose:** Captures system audio output using the Windows Audio Session API (WASAPI) in loopback mode.
+- **Mechanism:**
+  - Initializes a capture client on the default audio render device.
+  - buffers captured audio.
+  - Provides a `readSamples` method to retrieve standardized audio data (float, interleaved or deinterleaved).
+
+### B. VST GUI Integration (`VSTPluginFilterGUI`)
+
+- **File:** `Editor/guis/VSTPluginFilterGUI.cpp`
+- **Modifications:**
+  - **Loopback Integration:** Instantiates `WASAPILoopback` when the VST GUI window is opened.
+  - **Buffering:** Implements a fixed-size buffer (512 samples) to ensure stable VST processing. This mimics a real audio host's callback structure.
+  - **Thread Safety:** Uses `QMutex` to lock critical sections, preventing race conditions between the UI thread and the audio processing loop (especially during VST initialization/destruction).
+  - **Channel Management:**
+    - **Cap:** Inputs and Outputs are explicitly capped at **32 channels** to prevent crashes with plugins that report excessive channel counts (e.g., MAnalyzer reporting 64+ channels).
+    - **Mapping:** Deinterleaves and maps loopback audio to the VST's expected input channels.
+
+### C. VST Instance Handling (`VSTPluginInstance`)
+
+- **File:** `Editor/helpers/VSTPluginInstance.cpp`
+- **Critical Fixes:**
+  - **Time Info Flags:** Manually defined and implemented `vst_time_info` flags (e.g., `kVstTransportPlaying`, `kVstTempoValid`). This fixes crashes in plugins like **MAnalyzer** that rely on host time information.
+  - **Callback Handling:** Updated the `hostCallback` to return valid time info when requested by the plugin opcode `VST_HOST_OPCODE_GET_TIME`.
+
+## 3. Build System & Dependencies
+
+### Project Configuration (`Editor.vcxproj`)
+
+- **Platform:** x64 (Targeting 64-bit Windows).
+- **Toolset:** v145 (Visual Studio 2022).
+- **Dependencies:**
+  - **FFTW:** Links against `libfftw3-3.lib` (Double Precision).
+  - **LibSndFile:** Links against `sndfile.lib`.
+  - **Qt6:** Requires Qt 6.7.3 (Core, Gui, Widgets).
+
+### Runtime Requirements
+
+The compiled `Editor.exe` requires the following DLLs to be present in the same directory (or system path):
+
+1.  **`libfftw3-3.dll`** (Note: NOT `libfftw3.dll` or `libfftw3f.dll`. The code uses double precision).
+2.  **`sndfile.dll`**
+3.  **Qt6 DLLs** (`Qt6Core.dll`, `Qt6Gui.dll`, `Qt6Widgets.dll`, etc.).
+
+**Location:** These external DLLs have been organized into the **`Setup\lib64`** directory for inclusion in the installer.
+
+## 4. Debugging & Logging
+
+### Log Mechanism
+
+- **File:** `helpers/LogHelper.h`
+- **Output:** `%TEMP%\EqualizerAPO.log`
+- **Usage:**
+  - Use `LogF(L"Message %d", value)` for general logging.
+  - Use `LogFStatic` for logging from static contexts (like `main`).
+
+### Key Log Entries to Watch
+
+- `Editor: Application started` - Confirms the app entry point.
+- `VSTPluginFilterGUI: Constructor called` - Confirms VST GUI instantiation.
+- `VSTPluginFilterGUI: Processing loopback audio...` - Confirms the loopback thread is active and feeding data.
+
+## 5. Future Development Notes
+
+- **Updating VST SDK:** If updating `aeffectx.h`, ensure the manual time info flag definitions in `VSTPluginInstance.cpp` are handled correctly (either removed if the SDK includes them, or kept if using an older header).
+- **MAnalyzer/TDR Nova:** These plugins were specific stress tests for this feature. Always verify against them when making changes to `VSTPluginInstance` or buffering logic.
+- **Installer:** When updating the installer (`Setup.nsi`), remember to reference `libfftw3-3.dll` and not the older filenames.
