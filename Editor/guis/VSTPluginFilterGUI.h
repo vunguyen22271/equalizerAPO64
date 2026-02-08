@@ -20,9 +20,12 @@
 #pragma once
 
 #include <memory>
+#include <vector>
+#include <mutex>
 #include <QElapsedTimer>
 #include "Editor/IFilterGUI.h"
 #include "helpers/VSTPluginLibrary.h"
+#include "helpers/WASAPILoopback.h"
 
 namespace Ui {
 class VSTPluginFilterGUI;
@@ -62,6 +65,14 @@ private:
 	std::wstring chunkData;
 	std::unordered_map<std::wstring, float> paramMap;
 	bool embedded = false;
+	bool dialogOpen = false;
 	bool autoApplyDialog = false;
 	QElapsedTimer lastReadTimer;
+	WASAPILoopback* loopback = nullptr;
+	std::mutex audioMutex;
+	std::vector<float> inputBuffer;
+	std::vector<float*> inputPtrs;
+	std::vector<float*> outputPtrs;
+	std::vector<float> outputBuffer;
+	float currentSampleRate = 0.0f;
 };

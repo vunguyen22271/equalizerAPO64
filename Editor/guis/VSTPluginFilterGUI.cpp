@@ -27,6 +27,7 @@
 #include <windows.h>
 #include "helpers/aeffectx.h"
 #include "helpers/StringHelper.h"
+#include "helpers/LogHelper.h"
 #include "Editor/helpers/GUIHelper.h"
 #include "Editor/MainWindow.h"
 #include "VSTPluginFilterGUIDialog.h"
@@ -43,6 +44,102 @@ VSTPluginFilterGUI::VSTPluginFilterGUI(std::shared_ptr<VSTPluginLibrary> library
 	ui->frame->setVisible(false);
 	updatePermissionWarning();
 
+	LogF(L"VSTPluginFilterGUI: Constructor called");
+
+	loopback = new WASAPILoopback();
+	loopback->start([this](const std::vector<float>& samples, int channelCount, int sampleRate) {
+		std::lock_guard<std::mutex> lock(audioMutex);
+
+		if (!effect || (!embedded && !dialogOpen))
+			return;
+
+		// Initialize or Re-initialize if configuration changes
+		if (this->currentSampleRate != sampleRate)
+		{
+			LogF(L"VSTPluginFilterGUI: Audio config change. Rate: %d (Old: %.0f)", sampleRate, this->currentSampleRate);
+			
+			effect->stopProcessing();
+			
+			this->currentSampleRate = (float)sampleRate;
+			int blockSize = 512;
+			
+			// Prepare lists of pointers
+			int numInputs = effect->numInputs();
+			int numOutputs = effect->numOutputs();
+			
+			// Cap inputs to reasonable number to prevent massive allocation or issues with some plugins
+			if (numInputs > 32) numInputs = 32;
+			if (numOutputs > 32) numOutputs = 32;
+
+			LogF(L"VSTPluginFilterGUI: Config. Inputs: %d, Outputs: %d, Block: %d", numInputs, numOutputs, blockSize);
+
+			inputPtrs.resize(numInputs);
+			outputPtrs.resize(numOutputs);
+			outputBuffer.resize(blockSize * numOutputs); // Dummy output buffer
+
+			// Reset buffers
+			inputBuffer.clear();
+			
+			effect->prepareForProcessing(this->currentSampleRate, blockSize);
+			effect->startProcessing();
+		}
+
+		// Append new samples
+		inputBuffer.insert(inputBuffer.end(), samples.begin(), samples.end());
+
+		int blockSize = 512;
+		size_t neededSamples = blockSize * channelCount;
+
+		// Process in fixed-size chunks
+		while (inputBuffer.size() >= neededSamples)
+		{
+			int numInputs = effect->numInputs();
+			int numOutputs = effect->numOutputs();
+			
+			if (numInputs > 32) numInputs = 32;
+			if (numOutputs > 32) numOutputs = 32;
+
+			// We need a deinterleaved scratch buffer for the inputs
+			// Let's use a static vector or member to avoid realloc
+			static std::vector<float> deinterleavedInput; 
+			if (deinterleavedInput.size() < blockSize * numInputs)
+				deinterleavedInput.resize(blockSize * numInputs);
+
+			// Deinterleave and map channels
+			for (int ch = 0; ch < numInputs; ch++)
+			{
+				inputPtrs[ch] = &deinterleavedInput[ch * blockSize];
+				
+				// If we have source data for this channel
+				if (ch < channelCount)
+				{
+					for (int i = 0; i < blockSize; i++)
+					{
+						deinterleavedInput[ch * blockSize + i] = inputBuffer[i * channelCount + ch];
+					}
+				}
+				else
+				{
+					// Silence for unconnected inputs
+					memset(inputPtrs[ch], 0, blockSize * sizeof(float));
+				}
+			}
+
+			// Setup output pointers
+			for (int ch = 0; ch < numOutputs; ch++)
+			{
+				outputPtrs[ch] = &outputBuffer[ch * blockSize];
+			}
+
+			// Process
+			effect->processReplacing(inputPtrs.data(), outputPtrs.data(), blockSize);
+
+			// Remove used samples
+			// Optimization: could just move an index pointer, but erase is safer for logic
+			inputBuffer.erase(inputBuffer.begin(), inputBuffer.begin() + neededSamples);
+		}
+	});
+
 	QString absolutePath = QString::fromStdWString(library->getLibPath());
 	QDir pluginsDir(QString::fromStdWString(VSTPluginLibrary::getDefaultPluginPath()));
 	QString relativePath = QDir::toNativeSeparators(pluginsDir.relativeFilePath(absolutePath));
@@ -57,6 +154,8 @@ VSTPluginFilterGUI::VSTPluginFilterGUI(std::shared_ptr<VSTPluginLibrary> library
 
 VSTPluginFilterGUI::~VSTPluginFilterGUI()
 {
+	delete loopback;
+
 	if (effect != NULL)
 	{
 		if (embedded)
@@ -128,12 +227,14 @@ void VSTPluginFilterGUI::on_openPanelButton_clicked()
 		connect(dialog.getAutoApplyCheckBox(), SIGNAL(toggled(bool)), SLOT(autoApplyToggled(bool)));
 		connect(QAbstractEventDispatcher::instance(), SIGNAL(aboutToBlock()), SLOT(on_idle()));
 
+		dialogOpen = true;
 		if (dialog.exec() == QDialog::Accepted)
 		{
 			effect->readFromEffect(chunkData, paramMap);
 			updateModel();
 			updatePermissionWarning();
 		}
+		dialogOpen = false;
 		disconnect(QAbstractEventDispatcher::instance(), SIGNAL(aboutToBlock()), this, SLOT(on_idle()));
 	}
 }
@@ -192,9 +293,13 @@ void VSTPluginFilterGUI::initPlugin()
 		}
 		else
 		{
-			effect = new VSTPluginInstance(library, 1);
-			if (effect->initialize())
+			VSTPluginInstance* newEffect = new VSTPluginInstance(library, 1);
+			if (newEffect->initialize())
 			{
+				{
+					std::lock_guard<std::mutex> lock(audioMutex);
+					effect = newEffect;
+				}
 				effect->setLanguage(QLocale().language() == QLocale::German ? 2 : 1);
 				effect->setAutomateFunc(bind(&VSTPluginFilterGUI::onAutomate, this));
 
@@ -229,6 +334,8 @@ void VSTPluginFilterGUI::on_pathLineEdit_editingFinished()
 			oldId = effect->uniqueID();
 			if (ui->embedAction->isChecked())
 				on_embedAction_toggled(false);
+			
+			std::lock_guard<std::mutex> lock(audioMutex);
 			delete effect;
 			effect = NULL;
 		}

@@ -26,6 +26,7 @@
 #include "CustomStyle.h"
 #include "MainWindow.h"
 #include "helpers/RegistryHelper.h"
+#include "helpers/LogHelper.h"
 #include "Editor/helpers/GUIHelper.h"
 
 using namespace std;
@@ -40,6 +41,8 @@ int main(int argc, char* argv[])
 
 	QCoreApplication::addLibraryPath("qt");
 	qputenv("QT_ENABLE_HIGHDPI_SCALING", "0");
+
+	LogFStatic(L"Editor: Application started");
 
 	bool restart;
 	do
