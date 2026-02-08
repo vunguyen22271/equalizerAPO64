@@ -29,7 +29,27 @@ using namespace std;
 
 #define equalizerApoVSTID VST_FOURCC('E', 'A', 'P', 'O');
 
-vst_time_info vstTime{ 0,0,0,0,0,0,0,0,0,0,{0}, 0xFFFF };
+// Missing flags in aeffectx.h
+enum VstTimeInfoFlags
+{
+	kVstTransportChanged     = 1,
+	kVstTransportPlaying     = 1 << 1,
+	kVstTransportCycleActive = 1 << 2,
+	kVstTransportRecording   = 1 << 3,
+	kVstAutomationWriting    = 1 << 6,
+	kVstAutomationReading    = 1 << 7,
+	kVstNanosValid           = 1 << 8,
+	kVstPpqPosValid          = 1 << 9,
+	kVstTempoValid           = 1 << 10,
+	kVstBarsValid            = 1 << 11,
+	kVstCyclePosValid        = 1 << 12,
+	kVstTimeSigValid         = 1 << 13,
+	kVstSmpteValid           = 1 << 14,
+	kVstClockValid           = 1 << 15
+};
+
+// Initialize time info
+vst_time_info vstTime = { 0 };
 
 static intptr_t callback(struct vst_effect_t* effect, int32_t opcode, int32_t index, int64_t value, const char* ptr, float opt)
 {
@@ -69,7 +89,14 @@ static intptr_t callback(struct vst_effect_t* effect, int32_t opcode, int32_t in
 
 	case VST_HOST_OPCODE_GET_TIME:
 		if (instance != NULL) {
+			// Update time info
 			vstTime.sampleRate = instance->getSampleRate();
+			vstTime.nanoSeconds = 0; 
+			vstTime.samplePos += 512.0; // Increment dummy position
+			vstTime.tempo = 120.0;
+			vstTime.timeSigNumerator = 4;
+			vstTime.timeSigDenominator = 4;
+			vstTime.flags = kVstTransportPlaying | kVstTempoValid | kVstNanosValid | kVstTimeSigValid;
 			return (intptr_t)&vstTime;
 		}
 		return 0;

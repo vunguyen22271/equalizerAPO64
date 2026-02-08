@@ -243,3 +243,19 @@ paket-files/
 # JetBrains Rider
 .idea/
 *.sln.iml
+
+# custom
+note.ini
+
+# Qt generated files
+moc_*.cpp
+ui_*.h
+qrc_*.cpp
+Makefile*
+.qmake.stash
+*.qmake.cache
+*.cbt
+*.h.cpp
+
+# Local scripts
+# patch_vcxproj.py

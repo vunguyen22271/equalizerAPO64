@@ -195,7 +195,7 @@ Section "-Install"
   
   File "${BINPATH_EDITOR}\Editor.exe"
   
-  File "${LIBPATH}\libfftw3.dll"
+  File "${LIBPATH}\libfftw3-3.dll"
   File "${LIBPATH}\sndfile.dll"
   File "${LIBPATH}\Qt6Core.dll"
   File "${LIBPATH}\Qt6Gui.dll"
