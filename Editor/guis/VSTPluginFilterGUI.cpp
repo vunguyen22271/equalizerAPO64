@@ -154,6 +154,12 @@ VSTPluginFilterGUI::VSTPluginFilterGUI(std::shared_ptr<VSTPluginLibrary> library
 
 VSTPluginFilterGUI::~VSTPluginFilterGUI()
 {
+	if (dialog)
+	{
+		delete dialog;
+		dialog = nullptr;
+	}
+
 	delete loopback;
 
 	if (effect != NULL)
@@ -218,24 +224,59 @@ void VSTPluginFilterGUI::on_openPanelButton_clicked()
 {
 	initPlugin();
 
+	// Modeless dialog logic
+	if (dialog != nullptr)
+	{
+		dialog->show();
+		dialog->raise();
+		dialog->activateWindow();
+		return;
+	}
+
 	if (effect != NULL)
 	{
 		effect->writeToEffect(chunkData, paramMap);
 
-		VSTPluginFilterGUIDialog dialog(this, effect, autoApplyDialog);
-		connect(dialog.getApplyButton(), SIGNAL(pressed()), SLOT(applyDialog()));
-		connect(dialog.getAutoApplyCheckBox(), SIGNAL(toggled(bool)), SLOT(autoApplyToggled(bool)));
+		dialog = new VSTPluginFilterGUIDialog(this->window(), effect, autoApplyDialog); // Use main window as parent? Or just this so clean up is auto? Using this is safer for lifecycle.
+		// Wait, if we use modeless with parent 'this', it stays on top of 'this'.
+		// 'this' is a small widget in the scrolling filter list.
+		// Usually dialogs are parented to the main window or null if top-level.
+		// Let's use 'this' for now as original code, but 'show()' behaves differently than 'exec()'.
+		// If 'this' is hidden (e.g. collapsed group), dialog might hide?
+		// Better to use window() to get the top level window.
+		// Actually, let's stick to 'this' first to be safe about ownership.
+
+		connect(dialog->getApplyButton(), SIGNAL(pressed()), SLOT(applyDialog()));
+		connect(dialog->getAutoApplyCheckBox(), SIGNAL(toggled(bool)), SLOT(autoApplyToggled(bool)));
+		// Using new syntax for our own slot to be safe with types
+		connect(dialog, &QDialog::finished, this, &VSTPluginFilterGUI::onDialogFinished);
+		
 		connect(QAbstractEventDispatcher::instance(), SIGNAL(aboutToBlock()), SLOT(on_idle()));
 
 		dialogOpen = true;
-		if (dialog.exec() == QDialog::Accepted)
+		dialog->show();
+	}
+}
+
+void VSTPluginFilterGUI::onDialogFinished(int result)
+{
+	if (result == QDialog::Accepted)
+	{
+		if (effect)
 		{
 			effect->readFromEffect(chunkData, paramMap);
 			updateModel();
 			updatePermissionWarning();
 		}
-		dialogOpen = false;
-		disconnect(QAbstractEventDispatcher::instance(), SIGNAL(aboutToBlock()), this, SLOT(on_idle()));
+	}
+
+	dialogOpen = false;
+	disconnect(QAbstractEventDispatcher::instance(), SIGNAL(aboutToBlock()), this, SLOT(on_idle()));
+	
+	if (dialog)
+	{
+		dialog->deleteLater();
+		dialog = nullptr;
 	}
 }
 

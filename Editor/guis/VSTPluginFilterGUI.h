@@ -31,6 +31,8 @@ namespace Ui {
 class VSTPluginFilterGUI;
 }
 
+class VSTPluginFilterGUIDialog;
+
 class VSTPluginFilterGUI : public IFilterGUI
 {
 	Q_OBJECT
@@ -49,6 +51,7 @@ private slots:
 	void on_openPanelButton_clicked();
 	void applyDialog();
 	void autoApplyToggled(bool checked);
+	void onDialogFinished(int result);
 	void on_pathLineEdit_editingFinished();
 	void on_selectButton_clicked();
 	void on_embedAction_toggled(bool checked);
@@ -60,6 +63,7 @@ private:
 	void updatePermissionWarning();
 
 	Ui::VSTPluginFilterGUI* ui;
+	VSTPluginFilterGUIDialog* dialog = nullptr;
 	std::shared_ptr<VSTPluginLibrary> library;
 	VSTPluginInstance* effect = NULL;
 	std::wstring chunkData;
