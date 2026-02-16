@@ -32,6 +32,41 @@ The repository includes necessary pre-compiled static libraries in the `external
 - **LibSndFile:** Audio file IO library.
 - **MuParserX:** Math parser library.
 
+## 0.5. Development Flow & Architecture (Mental Model)
+
+To understand how this project is built and run, visualize the following components:
+
+### 1. The Builder (Visual Studio 2022)
+
+- **Role:** The factory that takes source code and builds the executable.
+- **Input:** Source files (`.cpp`, `.h`) + Project File (`Editor.vcxproj`).
+- **Action:** It compiles the code and **links** it against the **Static Libraries** found in `external-lib` (e.g., `libfftw3-3.lib`, `sndfile.lib`).
+- **Output:** `Editor.exe`.
+
+### 2. The Framework (Qt 6)
+
+- **Role:** The engine for the User Interface (Windows, Buttons, Graphs).
+- **Development:** You need the Qt VS Tools or Qt Creator to manage UI files (`.ui`).
+- **Runtime:** `Editor.exe` cannot run alone; it needs the **Qt Runtime DLLs** (`Qt6Core.dll`, `Qt6Gui.dll`, etc.) to be present in the same folder or system path.
+
+### 3. The External Dependencies (Runtime DLLs)
+
+- **Role:** Specialized workers that `Editor.exe` hires at runtime.
+- **FFTW (`libfftw3-3.dll`):** Performs complex math (Fast Fourier Transform) for audio analysis.
+- **LibSndFile (`sndfile.dll`):** Reads and writes audio files.
+- **Critical Note:** VS links against the _.lib_ files during build, but the app needs the _.dll_ files during run. We keep these in `Setup\lib64`.
+
+### 4. The Packager (NSIS Installer)
+
+- **Role:** The delivery truck.
+- **Input:** `Setup.nsi` script.
+- **Action:** It gathers `Editor.exe`, the Qt DLLs, and the External DLLs (from `Setup\lib64`) into a single `EqualizerAPO_Setup.exe`.
+- **Result:** The end user gets a complete package that "just works".
+
+**Mental Model Summary:**
+`Source Code` + `External Libs (.lib)` -> **Compiler (VS)** -> `Editor.exe`
+`Editor.exe` + `Qt DLLs` + `FFTW/SndFile DLLs` -> **The Running App**
+
 ## 1. Feature Overview
 
 The **VST Loopback Capture** feature allows VST plugins loaded within the Equalizer APO Editor to visualize audio in real-time. Since the Editor does not process live audio itself (it only generates config files), this feature uses **WASAPI Loopback** to capture the system's audio output and feed it into the VST plugin's processing loop solely for visualization purposes.
