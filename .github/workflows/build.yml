@@ -478,8 +478,22 @@ jobs:
             exit 1
           }
         }
-        Copy-Item ${{ github.workspace }}\deps\fftw\Release\libfftw3.dll -Destination $artifactPath -Force
-        Copy-Item ${{ github.workspace }}\deps\libsndfile\build\Release\sndfile.dll -Destination $artifactPath -Force
+        # CRITICAL: Fork uses libfftw3-3.dll from external-lib, not libfftw3.dll from deps
+        if (Test-Path "${{ github.workspace }}\external-lib\fftw\libfftw3-3.dll") {
+          Copy-Item "${{ github.workspace }}\external-lib\fftw\libfftw3-3.dll" -Destination $artifactPath -Force
+          Write-Host "Copied libfftw3-3.dll from external-lib (fork version)"
+        } else {
+          Copy-Item "${{ github.workspace }}\deps\fftw\Release\libfftw3.dll" -Destination $artifactPath -Force
+          Write-Host "Copied libfftw3.dll from deps (fallback)"
+        }
+
+        if (Test-Path "${{ github.workspace }}\Setup\lib64\sndfile.dll") {
+          Copy-Item "${{ github.workspace }}\Setup\lib64\sndfile.dll" -Destination $artifactPath -Force
+          Write-Host "Copied sndfile.dll from Setup/lib64"
+        } else {
+          Copy-Item "${{ github.workspace }}\deps\libsndfile\build\Release\sndfile.dll" -Destination $artifactPath -Force
+          Write-Host "Copied sndfile.dll from deps (fallback)"
+        }
 
         # Copy Qt applications built with qmake (Editor, DeviceSelector, UpdateChecker)
         # Include all deployed Qt dependencies (DLLs, plugins, etc.)
