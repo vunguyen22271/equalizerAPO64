@@ -139,50 +139,6 @@ SOURCES += main.cpp\
 	widgets/MiddleClickTabBar.cpp \
 	helpers/WASAPILoopback.cpp
 
-# Only compile muparserx from source if pre-built library not available
-isEmpty(MUPARSERX_LIB) {
-SOURCES += \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpError.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpFuncCmplx.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpFuncCommon.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpFuncMatrix.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpFuncNonCmplx.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpFuncStr.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpICallback.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpIOprt.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpIOprtBinShortcut.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpIPackage.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpIToken.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpIValReader.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpIValue.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpIfThenElse.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpOprtBinAssign.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpOprtBinCommon.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpOprtBinShortcut.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpOprtCmplx.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpOprtIndex.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpOprtMatrix.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpOprtNonCmplx.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpOprtPostfixCommon.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpPackageCmplx.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpPackageCommon.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpPackageMatrix.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpPackageNonCmplx.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpPackageStr.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpPackageUnit.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpParser.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpParserBase.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpParserMessageProvider.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpRPN.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpScriptTokens.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpTest.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpTokenReader.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpValReader.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpValue.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpValueCache.cpp \
-	../external-lib/muparserx/muparserx-4.0.12/parser/mpVariable.cpp
-}
-
 HEADERS  += \
 	../helpers/LogHelper.h \
 	../helpers/StringHelper.h \
@@ -358,13 +314,7 @@ isEmpty(MUPARSERX_INCLUDE) {
 MUPARSERX_LIB = $$(MUPARSERX_LIB)
 
 INCLUDEPATH += $$PWD/.. $$LIBSNDFILE_INCLUDE $$FFTW_INCLUDE $$MUPARSERX_INCLUDE
-LIBS += user32.lib advapi32.lib version.lib ole32.lib Shlwapi.lib authz.lib crypt32.lib dbghelp.lib winmm.lib sndfile.lib libfftw3-3.lib
-
-# Link muparserx.lib if available (CI), otherwise compile from source (local dev)
-!isEmpty(MUPARSERX_LIB) {
-	LIBS += muparserx.lib
-	message("Using pre-built muparserx.lib")
-}
+LIBS += user32.lib advapi32.lib version.lib ole32.lib Shlwapi.lib authz.lib crypt32.lib dbghelp.lib winmm.lib sndfile.lib libfftw3-3.lib muparserx.lib
 
 contains(QT_ARCH, arm64) {
 	QMAKE_LIBDIR += $$LIBSNDFILE_LIB $$FFTW_LIB $$MUPARSERX_LIB
