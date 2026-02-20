@@ -1,10 +1,11 @@
 name: Build EqualizerAPO
 
 on:
-  push:
-    branches: [ main, SIMD_CI ]
-  pull_request:
-    branches: [ main ]
+  # Disabled automatic triggers - use workflow_dispatch only
+  # push:
+  #   branches: [ main, SIMD_CI ]
+  # pull_request:
+  #   branches: [ main ]
   workflow_dispatch:
 
 permissions:
