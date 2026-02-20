@@ -30,6 +30,13 @@ The following forked repositories are used for a stable pipeline, each including
 - [libsndfile 1.2.2](https://github.com/thefirekahuna/libsndfile)
 - [tclap 1.2.5](https://github.com/thefirekahuna/tclap)
 
+### GitHub Actions Setup for Forks
+If you fork this repository, the GitHub Actions workflow needs to be configured to access dependency artifacts. See [`.github/WORKFLOW_SETUP.md`](.github/WORKFLOW_SETUP.md) for detailed instructions on:
+- Setting up a Personal Access Token (PAT) for quick setup
+- Forking dependencies to your account for long-term maintenance
+- Troubleshooting common build issues
+
+### Local Builds
 Local builds are configured via shared environment variables, directly configurable in the relevant .vcxproj and .pro files as follows:
 ```
   <PropertyGroup>
