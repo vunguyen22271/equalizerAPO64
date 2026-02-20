@@ -10,7 +10,13 @@
       "Bash(grep:*)",
       "Bash(cat:*)",
       "Bash(echo:*)",
-      "Bash(Write-Host:*)"
+      "Bash(Write-Host:*)",
+      "Bash(sed:*)",
+      "Bash(grep:*)",
+      "Bash(cat:*)",
+      "Bash(echo:*)",
+      "Bash(where:*)",
+      "Bash(cmd //c:*)"
     ]
   }
 }
