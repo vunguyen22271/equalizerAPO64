@@ -16,6 +16,9 @@ permissions:
 env:
   SOLUTION_FILE: EqualizerAPO.sln
   BUILD_CONFIGURATION: Release
+  # Repository owner for dependency artifacts (can be overridden in repository secrets)
+  # Use ${{ vars.DEPS_REPO_OWNER }} to set a custom owner, or fork dependencies to your account
+  DEPS_REPO_OWNER: TheFireKahuna
 
 jobs:
   build:
@@ -79,12 +82,15 @@ jobs:
       uses: NuGet/setup-nuget@v2
 
     # Download FFTW from amd-fftw repository artifacts
+    # Note: For forks, you need to either:
+    # 1. Set DEPS_REPO_OWNER variable to your GitHub username and fork the dependency repos, OR
+    # 2. Create a Personal Access Token (PAT) with 'repo' scope and add it as DEPS_GITHUB_TOKEN secret
     - name: Download FFTW artifacts
       uses: dawidd6/action-download-artifact@v3
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+        github_token: ${{ secrets.DEPS_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         workflow: c-cpp.yml
-        repo: TheFireKahuna/amd-fftw
+        repo: ${{ vars.DEPS_REPO_OWNER || env.DEPS_REPO_OWNER }}/amd-fftw
         name: ${{ matrix.fftw_artifact }}
         path: ${{ github.workspace }}\deps\fftw
         check_artifacts: true
@@ -96,9 +102,9 @@ jobs:
     - name: Download muParserX artifacts
       uses: dawidd6/action-download-artifact@v3
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+        github_token: ${{ secrets.DEPS_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         workflow: c-cpp.yml
-        repo: TheFireKahuna/muparserx
+        repo: ${{ vars.DEPS_REPO_OWNER || env.DEPS_REPO_OWNER }}/muparserx
         name: ${{ matrix.muparserx_artifact }}
         path: ${{ github.workspace }}\deps\muparserx
         check_artifacts: true
@@ -106,13 +112,13 @@ jobs:
         workflow_conclusion: success
         allow_forks: true
 
-    # Download muParserX from repository artifacts
+    # Download libsndfile from repository artifacts
     - name: Download libsndfile artifacts
       uses: dawidd6/action-download-artifact@v3
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+        github_token: ${{ secrets.DEPS_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         workflow: action.yml
-        repo: TheFireKahuna/libsndfile
+        repo: ${{ vars.DEPS_REPO_OWNER || env.DEPS_REPO_OWNER }}/libsndfile
         name: ${{ matrix.libsndfile_artifact }}
         path: ${{ github.workspace }}\deps\libsndfile
         check_artifacts: true
@@ -124,8 +130,8 @@ jobs:
     - name: Download TCLAP
       uses: actions/checkout@v4
       with:
-        repository: TheFireKahuna/tclap
-        token: ${{ secrets.GITHUB_TOKEN }}
+        repository: ${{ vars.DEPS_REPO_OWNER || env.DEPS_REPO_OWNER }}/tclap
+        token: ${{ secrets.DEPS_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         path: deps/tclap
 
     # Setup dependency structures
