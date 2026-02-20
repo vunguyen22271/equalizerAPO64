@@ -249,7 +249,8 @@ jobs:
           "Common.vcxproj",
           "EqualizerAPO\EqualizerAPO.vcxproj",
           "Benchmark\Benchmark.vcxproj",
-          "VoicemeeterClient\VoicemeeterClient.vcxproj"
+          "VoicemeeterClient\VoicemeeterClient.vcxproj",
+          "Editor\Editor.vcxproj"
         )
 
         # Set LIB environment variable so linker can find our libraries
@@ -430,16 +431,11 @@ jobs:
           return $true
         }
 
-        # Build all Qt projects
-        $editorSuccess = Build-QtProject "Editor" "Editor\Editor.pro"
+        # Build Qt projects (DeviceSelector and UpdateChecker only - Editor built with MSBuild above)
         $deviceSelectorSuccess = Build-QtProject "DeviceSelector" "DeviceSelector\DeviceSelector.pro"
         $updateCheckerSuccess = Build-QtProject "UpdateChecker" "UpdateChecker\UpdateChecker.pro"
 
         # Check if any builds failed
-        if (-not $editorSuccess) {
-          Write-Error "Editor build failed"
-          exit 1
-        }
         if (-not $deviceSelectorSuccess) {
           Write-Error "DeviceSelector build failed"
           exit 1
