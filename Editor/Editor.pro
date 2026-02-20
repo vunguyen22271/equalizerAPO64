@@ -137,7 +137,11 @@ SOURCES += main.cpp\
 	helpers/QtSndfileHandle.cpp \
 	widgets/MiddleClickTabWidget.cpp \
 	widgets/MiddleClickTabBar.cpp \
-	helpers/WASAPILoopback.cpp \
+	helpers/WASAPILoopback.cpp
+
+# Only compile muparserx from source if pre-built library not available
+isEmpty(MUPARSERX_LIB) {
+SOURCES += \
 	../external-lib/muparserx/muparserx-4.0.12/parser/mpError.cpp \
 	../external-lib/muparserx/muparserx-4.0.12/parser/mpFuncCmplx.cpp \
 	../external-lib/muparserx/muparserx-4.0.12/parser/mpFuncCommon.cpp \
@@ -177,6 +181,7 @@ SOURCES += main.cpp\
 	../external-lib/muparserx/muparserx-4.0.12/parser/mpValue.cpp \
 	../external-lib/muparserx/muparserx-4.0.12/parser/mpValueCache.cpp \
 	../external-lib/muparserx/muparserx-4.0.12/parser/mpVariable.cpp
+}
 
 HEADERS  += \
 	../helpers/LogHelper.h \
@@ -350,12 +355,16 @@ isEmpty(MUPARSERX_INCLUDE) {
 	MUPARSERX_INCLUDE = "$$PWD/../external-lib/muparserx/muparserx-4.0.12/parser"
 }
 
-
+MUPARSERX_LIB = $$(MUPARSERX_LIB)
 
 INCLUDEPATH += $$PWD/.. $$LIBSNDFILE_INCLUDE $$FFTW_INCLUDE $$MUPARSERX_INCLUDE
 LIBS += user32.lib advapi32.lib version.lib ole32.lib Shlwapi.lib authz.lib crypt32.lib dbghelp.lib winmm.lib sndfile.lib libfftw3-3.lib
 
-# LIBS += muparserx.lib removed for source build
+# Link muparserx.lib if available (CI), otherwise compile from source (local dev)
+!isEmpty(MUPARSERX_LIB) {
+	LIBS += muparserx.lib
+	message("Using pre-built muparserx.lib")
+}
 
 contains(QT_ARCH, arm64) {
 	QMAKE_LIBDIR += $$LIBSNDFILE_LIB $$FFTW_LIB $$MUPARSERX_LIB
