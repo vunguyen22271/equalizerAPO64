@@ -575,18 +575,19 @@ jobs:
             simd_variant: avx2
             setup_file: Setup64
             installer_name: x64-avx2
-          - platform: x64
-            simd_variant: avx512
-            setup_file: Setup64
-            installer_name: x64-avx512
-          - platform: x64
-            simd_variant: avx10_1
-            setup_file: Setup64
-            installer_name: x64-avx10_1
-          - platform: ARM64
-            simd_variant: neon
-            setup_file: SetupARM64
-            installer_name: arm64
+          # Uncomment below to build other installers:
+          # - platform: x64
+          #   simd_variant: avx512
+          #   setup_file: Setup64
+          #   installer_name: x64-avx512
+          # - platform: x64
+          #   simd_variant: avx10_1
+          #   setup_file: Setup64
+          #   installer_name: x64-avx10_1
+          # - platform: ARM64
+          #   simd_variant: neon
+          #   setup_file: SetupARM64
+          #   installer_name: arm64
 
     steps:
     - name: Checkout repository
