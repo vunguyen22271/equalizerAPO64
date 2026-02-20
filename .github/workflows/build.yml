@@ -25,9 +25,10 @@ jobs:
       matrix:
         name: [
           windows-x64-avx2,
-          windows-x64-avx512,
-          windows-x64-avx10_1,
-          windows-arm64
+          # Uncomment below to build other variants:
+          # windows-x64-avx512,
+          # windows-x64-avx10_1,
+          # windows-arm64
         ]
         include:
           - name: windows-x64-avx2
@@ -39,32 +40,35 @@ jobs:
             muparserx_artifact: muparserx-msvc-release-x64-avx2
             libsndfile_artifact: libsndfile-x64-avx2
             msvcdevplatform: x64
-          - name: windows-x64-avx512
-            os: windows-2025
-            platform: x64
-            simd_variant: avx512
-            arch_flag: AdvancedVectorExtensions512
-            fftw_artifact: fftw-windows-release-x64-avx512
-            muparserx_artifact: muparserx-msvc-release-x64-avx512
-            libsndfile_artifact: libsndfile-x64-avx512
-            msvcdevplatform: x64
-          - name: windows-x64-avx10_1
-            os: windows-2025
-            platform: x64
-            simd_variant: avx10_1
-            arch_flag: AdvancedVectorExtensions101
-            fftw_artifact: fftw-windows-release-x64-avx10
-            muparserx_artifact: muparserx-msvc-release-x64-avx10
-            libsndfile_artifact: libsndfile-x64-avx10
-            msvcdevplatform: x64
-          - name: windows-arm64
-            os: windows-11-arm
-            platform: ARM64
-            simd_variant: neon
-            fftw_artifact: fftw-windows-release-arm64
-            muparserx_artifact: muparserx-msvc-release-ARM64
-            libsndfile_artifact: libsndfile-arm64
-            msvcdevplatform: x86_arm64 
+          # Uncomment below to build AVX-512 variant:
+          # - name: windows-x64-avx512
+          #   os: windows-2025
+          #   platform: x64
+          #   simd_variant: avx512
+          #   arch_flag: AdvancedVectorExtensions512
+          #   fftw_artifact: fftw-windows-release-x64-avx512
+          #   muparserx_artifact: muparserx-msvc-release-x64-avx512
+          #   libsndfile_artifact: libsndfile-x64-avx512
+          #   msvcdevplatform: x64
+          # Uncomment below to build AVX10.1 variant:
+          # - name: windows-x64-avx10_1
+          #   os: windows-2025
+          #   platform: x64
+          #   simd_variant: avx10_1
+          #   arch_flag: AdvancedVectorExtensions101
+          #   fftw_artifact: fftw-windows-release-x64-avx10
+          #   muparserx_artifact: muparserx-msvc-release-x64-avx10
+          #   libsndfile_artifact: libsndfile-x64-avx10
+          #   msvcdevplatform: x64
+          # Uncomment below to build ARM64 variant:
+          # - name: windows-arm64
+          #   os: windows-11-arm
+          #   platform: ARM64
+          #   simd_variant: neon
+          #   fftw_artifact: fftw-windows-release-arm64
+          #   muparserx_artifact: muparserx-msvc-release-ARM64
+          #   libsndfile_artifact: libsndfile-arm64
+          #   msvcdevplatform: x86_arm64 
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -83,7 +87,7 @@ jobs:
     - name: Download FFTW artifacts
       uses: dawidd6/action-download-artifact@v3
       with:
-        github_token: ${{ secrets.GH_PAT }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
         workflow: c-cpp.yml
         repo: TheFireKahuna/amd-fftw
         name: ${{ matrix.fftw_artifact }}
@@ -97,7 +101,7 @@ jobs:
     - name: Download muParserX artifacts
       uses: dawidd6/action-download-artifact@v3
       with:
-        github_token: ${{ secrets.GH_PAT }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
         workflow: c-cpp.yml
         repo: TheFireKahuna/muparserx
         name: ${{ matrix.muparserx_artifact }}
@@ -111,7 +115,7 @@ jobs:
     - name: Download libsndfile artifacts
       uses: dawidd6/action-download-artifact@v3
       with:
-        github_token: ${{ secrets.GH_PAT }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
         workflow: action.yml
         repo: TheFireKahuna/libsndfile
         name: ${{ matrix.libsndfile_artifact }}
