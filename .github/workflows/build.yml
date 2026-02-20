@@ -82,13 +82,12 @@ jobs:
       uses: NuGet/setup-nuget@v2
 
     # Download FFTW from amd-fftw repository artifacts
-    # Note: For forks, you need to either:
-    # 1. Set DEPS_REPO_OWNER variable to your GitHub username and fork the dependency repos, OR
-    # 2. Create a Personal Access Token (PAT) with 'repo' scope and add it as DEPS_GITHUB_TOKEN secret
+    # Note: For public repositories, github_token is optional
+    # Only provide a token (via DEPS_GITHUB_TOKEN secret) if you need to access private repos or rate limits
     - name: Download FFTW artifacts
       uses: dawidd6/action-download-artifact@v3
       with:
-        github_token: ${{ secrets.DEPS_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        github_token: ${{ secrets.DEPS_GITHUB_TOKEN }}
         workflow: c-cpp.yml
         repo: ${{ vars.DEPS_REPO_OWNER || env.DEPS_REPO_OWNER }}/amd-fftw
         name: ${{ matrix.fftw_artifact }}
@@ -102,7 +101,7 @@ jobs:
     - name: Download muParserX artifacts
       uses: dawidd6/action-download-artifact@v3
       with:
-        github_token: ${{ secrets.DEPS_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        github_token: ${{ secrets.DEPS_GITHUB_TOKEN }}
         workflow: c-cpp.yml
         repo: ${{ vars.DEPS_REPO_OWNER || env.DEPS_REPO_OWNER }}/muparserx
         name: ${{ matrix.muparserx_artifact }}
@@ -116,7 +115,7 @@ jobs:
     - name: Download libsndfile artifacts
       uses: dawidd6/action-download-artifact@v3
       with:
-        github_token: ${{ secrets.DEPS_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        github_token: ${{ secrets.DEPS_GITHUB_TOKEN }}
         workflow: action.yml
         repo: ${{ vars.DEPS_REPO_OWNER || env.DEPS_REPO_OWNER }}/libsndfile
         name: ${{ matrix.libsndfile_artifact }}
@@ -127,7 +126,7 @@ jobs:
         allow_forks: true
 
     # Clone tclap repository (header-only library)
-    # Note: Token is provided for consistency and to support private forks
+    # Note: For public repositories, token is optional but provided for rate limit avoidance
     - name: Download TCLAP
       uses: actions/checkout@v4
       with:

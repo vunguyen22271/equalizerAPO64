@@ -31,10 +31,9 @@ The following forked repositories are used for a stable pipeline, each including
 - [tclap 1.2.5](https://github.com/thefirekahuna/tclap)
 
 ### GitHub Actions Setup for Forks
-If you fork this repository, the GitHub Actions workflow needs to be configured to access dependency artifacts. See [`.github/WORKFLOW_SETUP.md`](.github/WORKFLOW_SETUP.md) for detailed instructions on:
-- Setting up a Personal Access Token (PAT) for quick setup
-- Forking dependencies to your account for long-term maintenance
-- Troubleshooting common build issues
+**Good news for forks**: The workflow now works out of the box! It downloads public artifacts from the dependency repositories without requiring any authentication or setup.
+
+For advanced configurations (using your own dependencies or private repos), see [`.github/WORKFLOW_SETUP.md`](.github/WORKFLOW_SETUP.md).
 
 ### Local Builds
 Local builds are configured via shared environment variables, directly configurable in the relevant .vcxproj and .pro files as follows:
