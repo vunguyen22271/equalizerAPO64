@@ -14,6 +14,8 @@ TEMPLATE = app
 PRECOMPILED_HEADER = stable.h
 QMAKE_CXXFLAGS_WARN_ON -= -w34100
 QMAKE_LFLAGS += /STACK:32000000
+# Increase linker heap size to handle large number of symbols
+QMAKE_LFLAGS += /HEAP:104857600
 QMAKE_CXXFLAGS_RELEASE += /O2
 
 DEFINES += _UNICODE
