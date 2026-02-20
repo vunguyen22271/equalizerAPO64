@@ -127,6 +127,7 @@ jobs:
         allow_forks: true
 
     # Clone tclap repository (header-only library)
+    # Note: Token is provided for consistency and to support private forks
     - name: Download TCLAP
       uses: actions/checkout@v4
       with:
