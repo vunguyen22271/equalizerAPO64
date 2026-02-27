@@ -27,10 +27,4 @@ private:
 	std::thread captureThread;
 	AudioCallback callback;
 	std::mutex mutex;
-
-	IMMDeviceEnumerator* enumerator = nullptr;
-	IMMDevice* device = nullptr;
-	IAudioClient* audioClient = nullptr;
-	IAudioCaptureClient* captureClient = nullptr;
-	WAVEFORMATEX* mixFormat = nullptr;
 };
