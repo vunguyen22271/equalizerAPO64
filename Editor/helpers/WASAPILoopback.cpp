@@ -121,13 +121,41 @@ void WASAPILoopback::captureThreadFunc()
 		
 		LogF(L"WASAPILoopback: Started capture. Channels: %d, Rate: %d", mixFormat->nChannels, mixFormat->nSamplesPerSec);
 
+		LPWSTR currentDeviceId = nullptr;
+		device->GetId(&currentDeviceId);
+
 		int channelCount = mixFormat->nChannels;
 		int sampleRate = mixFormat->nSamplesPerSec;
 		bool firstPacket = true;
+		auto lastDeviceCheck = std::chrono::steady_clock::now();
 
 		while (running)
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+			// Periodically check if the default device has changed
+			auto now = std::chrono::steady_clock::now();
+			if (now - lastDeviceCheck > std::chrono::seconds(1))
+			{
+				lastDeviceCheck = now;
+				IMMDevice* defaultDevice = nullptr;
+				if (SUCCEEDED(enumerator->GetDefaultAudioEndpoint(eRender, eMultimedia, &defaultDevice)))
+				{
+					LPWSTR defaultDeviceId = nullptr;
+					if (SUCCEEDED(defaultDevice->GetId(&defaultDeviceId)))
+					{
+						if (currentDeviceId && defaultDeviceId && wcscmp(currentDeviceId, defaultDeviceId) != 0)
+						{
+							LogF(L"WASAPILoopback: Default device change detected (%s -> %s). Restarting.", currentDeviceId, defaultDeviceId);
+							CoTaskMemFree(defaultDeviceId);
+							defaultDevice->Release();
+							break;
+						}
+						CoTaskMemFree(defaultDeviceId);
+					}
+					defaultDevice->Release();
+				}
+			}
 
 			UINT32 packetLength = 0;
 			hr = captureClient->GetNextPacketSize(&packetLength);
@@ -190,6 +218,8 @@ void WASAPILoopback::captureThreadFunc()
 		}
 
 		LogF(L"WASAPILoopback: Capture cycle ended. Cleaning up for possible restart...");
+
+		if (currentDeviceId) CoTaskMemFree(currentDeviceId);
 
 		audioClient->Stop();
 		captureClient->Release();
